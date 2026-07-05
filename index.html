@@ -110,6 +110,41 @@
     position:relative; z-index:2;
     max-width:1200px; margin:0 auto; padding:0 28px;
     width:100%;
+    display:grid; grid-template-columns:1fr minmax(280px, 440px);
+    gap:40px; align-items:center;
+  }
+  .hero-text{ min-width:0; }
+  .hero-visual{
+    position:relative;
+    width:100%; aspect-ratio:1 / 1.05;
+    overflow:hidden; /* keeps the incoming cars fully hidden until they
+      cross into frame — you only ever see the hood first, never a spawn */
+    border:1px solid var(--line);
+    border-radius:2px;
+    background:radial-gradient(ellipse 80% 70% at 50% 40%, rgba(30,95,255,0.08), transparent 70%);
+  }
+  .hero-car{
+    position:absolute; left:4%;
+    width:82%; max-width:360px; height:auto;
+    background-size:contain; background-repeat:no-repeat; background-position:center;
+    aspect-ratio:16 / 9;
+    opacity:0;
+    transform:translateX(-140%);
+    animation:carEnter 1.15s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .hero-car.car1{ top:6%; }
+  .hero-car.car2{ top:38%; animation-delay:0.65s; }
+  .hero-car.car3{ top:70%; animation-delay:1.3s; }
+  /* medium speed at first, then a decelerating "graph" ease into
+     the resting spot — no bounce, no overshoot, just a smooth stop */
+  @keyframes carEnter{
+    0%{ transform:translateX(-140%); opacity:0; }
+    12%{ opacity:1; }
+    100%{ transform:translateX(0); opacity:1; }
+  }
+  @media (max-width:900px){
+    .hero-inner{ grid-template-columns:1fr; }
+    .hero-visual{ max-width:420px; }
   }
   .eyebrow{
     font-family:'JetBrains Mono'; font-size:13px; letter-spacing:0.18em;
@@ -157,20 +192,36 @@
     transition:border-color .2s ease, transform .2s ease;
   }
   .driver-card:hover{border-color:var(--blue); transform:translateY(-4px);}
-  .photo-row{ position:relative; height:190px; border-bottom:1px solid var(--line); }
+  .photo-row{ position:relative; height:190px; border-bottom:1px solid var(--line); overflow:hidden; }
   .car-photo{
+    position:relative;
     height:100%; width:100%; background:var(--panel-hi);
     display:flex; align-items:center; justify-content:center;
     color:var(--bar5); font-family:'JetBrains Mono'; font-size:12px;
     letter-spacing:0.1em; text-transform:uppercase;
     background-size:cover; background-position:center;
   }
+  /* smooth fade from the card's own panel color into the car photo —
+     solid panel tone up to the "red line" point, fully resolved to the
+     photo (0 opacity overlay) by the "green line" point, no hard edge */
+  .car-photo::before{
+    content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+    background:linear-gradient(to right,
+      var(--panel) 0%, var(--panel) 12%, transparent 50%);
+  }
+  /* bounding box the avatar must stay inside — anchored to the
+     card's bottom-left corner, image cropped to torso-and-up only */
   .avatar-slot{
-    position:absolute; right:6px; top:42%; bottom:-54px; width:48%; max-width:150px;
-    display:flex; align-items:flex-end; justify-content:center;
+    position:absolute; left:8px; bottom:0; width:52%; max-width:150px; height:76%;
+    overflow:hidden;
     pointer-events:none; z-index:2;
   }
-  .avatar-slot img{ width:100%; height:100%; object-fit:contain; object-position:bottom center; }
+  .avatar-slot img{
+    position:absolute; left:50%; top:0; transform:translateX(-50%);
+    width:auto; height:190%; /* scaled so only the head-to-torso portion
+      falls inside the box; the lower half (legs) is clipped away below */
+    object-fit:cover; object-position:top center;
+  }
   .driver-body{padding:18px 20px 20px;}
   .driver-num{ font-family:'JetBrains Mono'; color:var(--blue); font-size:14px; margin-bottom:4px; }
   .driver-name{font-family:'Rajdhani'; font-size:23px; font-weight:700; margin-bottom:2px;}
@@ -184,6 +235,12 @@
   /* ---- sponsors: infinite marquee ---- */
   .marquee{
     overflow:hidden; position:relative;
+    /* smooth fade at both edges so tiles appear/disappear instead of
+       popping in and out at a hard boundary */
+    -webkit-mask-image:linear-gradient(to right,
+      transparent 0, black 100px, black calc(100% - 100px), transparent 100%);
+    mask-image:linear-gradient(to right,
+      transparent 0, black 100px, black calc(100% - 100px), transparent 100%);
   }
   .marquee-track{
     display:flex; gap:20px; width:max-content;
@@ -195,10 +252,11 @@
     background:var(--panel); border:1px solid var(--line);
     height:120px; width:220px; flex:0 0 auto;
     display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
     transition:border-color .2s ease;
   }
   .sponsor-tile:hover{border-color:var(--blue);}
-  .sponsor-tile img{ max-height:70%; max-width:70%; object-fit:contain; }
+  .sponsor-tile img{ width:100%; height:100%; object-fit:cover; }
   .sponsor-tile .placeholder{
     font-family:'JetBrains Mono'; font-size:11px; color:var(--bar5); letter-spacing:0.08em; text-transform:uppercase;
   }
@@ -261,9 +319,12 @@
 
 <section class="hero" id="top">
   <div class="hero-inner">
-    <div class="eyebrow"><span class="dot"></span>Summer Rush &middot; Est. 2026</div>
-    <h1 class="hero-logo"><img src="https://github.com/okfait/HRT/blob/main/HRT.png?raw=true" alt="Hyperline Racing Team"></h1>
-    <p>Founded by Brave_fanatic73. Track our drivers, sponsors, and crew — updated live.</p>
+    <div class="hero-text">
+      <div class="eyebrow"><span class="dot"></span>Summer Rush &middot; Est. 2026</div>
+      <h1 class="hero-logo"><img src="https://github.com/okfait/HRT/blob/main/HRT.png?raw=true" alt="Hyperline Racing Team"></h1>
+      <p>Founded by Brave_fanatic73. Track our drivers, sponsors, and crew — updated live.</p>
+    </div>
+    <div class="hero-visual" id="heroCars"></div>
   </div>
 </section>
 
@@ -350,6 +411,10 @@
     { name:"Mira Chen", role:"Livery Designer", img:"" },
     { name:"Theo Banks", role:"Logo & Brand", img:"" },
   ];
+
+  // Hero cars — one row only: the 3 top-down shots that drive into
+  // the hero box, one after another, on every page load/refresh.
+  let cars = { car1:"", car2:"", car3:"" };
 
   /* ---------- render helpers ---------- */
 
@@ -450,11 +515,29 @@
     }).join('');
   }
 
+  function renderCars(){
+    const el = document.getElementById('heroCars');
+    if(!el) return;
+    const layers = [
+      { key:'car1', cls:'car1' },
+      { key:'car2', cls:'car2' },
+      { key:'car3', cls:'car3' },
+    ];
+    // Rebuilding the elements (rather than just swapping background
+    // images) is what makes the drive-in animation replay every time
+    // renderAll() runs — i.e. on every fresh page load/refresh.
+    el.innerHTML = layers
+      .filter(l => cars[l.key])
+      .map(l => `<div class="hero-car ${l.cls}" style="background-image:url('${cars[l.key]}')"></div>`)
+      .join('');
+  }
+
   function renderAll(){
     renderRoster();
     renderSponsors();
     renderManager();
     renderMentions();
+    renderCars();
   }
 
   /* =========================================================
@@ -464,6 +547,8 @@
        columns A–F  -> Drivers  (Name, Number, Role, CarName, CarImage, AvatarImage)
        columns H–I  -> Sponsors (Name, Image)
        columns K–M  -> Mentions (Name, RoleText, AvatarImage)
+       columns O–Q  -> Cars     (Car1Image, Car2Image, Car3Image) — one row only,
+                        the hero drive-in animation
      Row 1 is blank, row 2 is headers, data starts row 3.
      There's no separate "Team Manager" table — whichever Mentions
      row has RoleText exactly "Team Manager" becomes the standalone
@@ -503,6 +588,13 @@
                 name: r[10].trim(), role: (r[11] || '').trim(),
                 img: (r[12] || '').trim()
               });
+            }
+            if (i === 2) { // Cars: O-Q — one row only
+              cars = {
+                car1: (r[14] || '').trim(),
+                car2: (r[15] || '').trim(),
+                car3: (r[16] || '').trim()
+              };
             }
           }
 
