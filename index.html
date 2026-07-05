@@ -130,7 +130,7 @@
     background-size:contain; background-repeat:no-repeat; background-position:center;
     aspect-ratio:16 / 9;
     opacity:0;
-    /* positive = starts off past the RIGHT edge of the box, well outside and stuff like that
+    /* positive = starts off past the RIGHT edge of the box, well outside
        the frame, so it visibly slides in from off-screen rather than
        materializing inside the box */
     transform:translateX(var(--car-enter-x));
@@ -151,7 +151,27 @@
     .hero-visual{ max-width:420px; }
   }
 
-  /* ---- car calibration tool (only appears with ?calibrate in the URL) ---- */
+  /* ---- finish line: appears only once all 3 cars have stopped,
+     drawing itself top-to-bottom with a fade as it goes ---- */
+  .finish-line{
+    position:absolute; width:4px; z-index:5; pointer-events:none;
+    background:repeating-linear-gradient(to bottom,
+      var(--white) 0 10px, var(--blue) 10px 20px);
+    box-shadow:0 0 12px rgba(30,95,255,0.35);
+    clip-path:inset(0 0 100% 0);
+    opacity:0;
+  }
+  .finish-line.reveal{
+    animation:finishLineReveal 1s ease-out forwards;
+  }
+  @keyframes finishLineReveal{
+    0%{ clip-path:inset(0 0 100% 0); opacity:0; }
+    15%{ opacity:1; }
+    100%{ clip-path:inset(0 0 0% 0); opacity:1; }
+  }
+
+  /* ---- car calibration tool (button visible bottom-right; delete
+     this whole section + its HTML before going live) ---- */
   .calib-toggle{
     position:fixed; right:18px; bottom:18px; z-index:999;
     background:var(--blue); color:#fff; border:none; border-radius:6px;
@@ -418,6 +438,8 @@
   Hyperline Racing Team &middot; Greenville RP Community
 </footer>
 
+<div class="finish-line" id="finishLine"></div>
+
 <button id="calibToggle" class="calib-toggle" style="display:none;">⚙ Calibrate Cars</button>
 <div id="calibPanel" class="calib-panel" style="display:none;">
   <h4>// Hero Car Calibration</h4>
@@ -592,6 +614,34 @@
     }).join('');
   }
 
+  // Positions the finish line: left edge sits just before where the
+  // cars' hoods come to rest (with a small gap so it's not touching the
+  // car), running from the top of the car box down to the horizontal
+  // rule under "The Lineup" heading.
+  function positionFinishLine(){
+    const heroVisual = document.querySelector('.hero-visual');
+    const sectionHead = document.querySelector('#roster .section-head');
+    const line = document.getElementById('finishLine');
+    if (!heroVisual || !sectionHead || !line) return;
+
+    const heroRect = heroVisual.getBoundingClientRect();
+    const headRect = sectionHead.getBoundingClientRect();
+    const scrollY = window.scrollY || window.pageYOffset;
+
+    const gap = 16; // breathing room so the line doesn't sit inside the hood
+    const carLeftPercent = parseFloat(
+      getComputedStyle(heroVisual).getPropertyValue('--car-left')
+    ) || 8;
+    const leftPx = heroRect.left + (heroRect.width * carLeftPercent / 100) - gap;
+
+    const top = heroRect.top + scrollY;
+    const bottom = headRect.bottom + scrollY; // stops right at that rule
+    line.style.left = leftPx + 'px';
+    line.style.top = top + 'px';
+    line.style.height = Math.max(0, bottom - top) + 'px';
+  }
+  window.addEventListener('resize', positionFinishLine);
+
   function renderCars(){
     const el = document.getElementById('heroCars');
     if(!el) return;
@@ -600,13 +650,26 @@
       { key:'car2', cls:'car2' },
       { key:'car3', cls:'car3' },
     ];
+    const active = layers.filter(l => cars[l.key]);
     // Rebuilding the elements (rather than just swapping background
     // images) is what makes the drive-in animation replay every time
     // renderAll() runs — i.e. on every fresh page load/refresh.
-    el.innerHTML = layers
-      .filter(l => cars[l.key])
+    el.innerHTML = active
       .map(l => `<div class="hero-car ${l.cls}" style="background-image:url('${cars[l.key]}')"></div>`)
       .join('');
+
+    // Reveal the finish line only once the LAST car has fully stopped
+    const finishLine = document.getElementById('finishLine');
+    if (finishLine && active.length){
+      finishLine.classList.remove('reveal');
+      positionFinishLine();
+      const lastCls = active[active.length - 1].cls;
+      const lastCar = el.querySelector(`.hero-car.${lastCls}`);
+      lastCar.addEventListener('animationend', () => {
+        positionFinishLine();
+        finishLine.classList.add('reveal');
+      }, { once:true });
+    }
   }
 
   function renderAll(){
@@ -694,17 +757,17 @@
 
   /* =========================================================
      CAR CALIBRATION TOOL
-     Only shows up when the URL has ?calibrate in it, e.g.
-     yoursite.com/?calibrate — keeps it invisible to normal visitors.
+     The button sits bottom-right of the page, always visible.
      Drag the sliders to preview live, hit "Replay" to re-run the
      entrance animation with the new values, then "Get CSS code" +
-     "Copy code" to grab a :root{...} block. Paste that block right
-     under the existing :root{...} in the <style> tag (or merge the
-     values into it) to make the tweak permanent.
+     "Copy code" to grab a .hero-visual{...} block — paste that over
+     the matching lines inside the real .hero-visual{} rule in the
+     <style> tag to make the tweak permanent.
+     Once you're happy with the numbers, delete this whole block
+     (search for "CAR CALIBRATION TOOL") plus the button/panel HTML
+     near the footer, so visitors never see it.
      ========================================================= */
   (function initCalibration(){
-    if (!location.search.includes('calibrate')) return;
-
     const toggleBtn = document.getElementById('calibToggle');
     const panel = document.getElementById('calibPanel');
     toggleBtn.style.display = 'block';
@@ -734,11 +797,21 @@
     });
 
     document.getElementById('calibReplay').addEventListener('click', () => {
-      document.querySelectorAll('.hero-car').forEach(el => {
+      const finishLine = document.getElementById('finishLine');
+      if (finishLine) finishLine.classList.remove('reveal');
+      const carEls = Array.from(document.querySelectorAll('.hero-car'));
+      carEls.forEach(el => {
         el.style.animation = 'none';
         void el.offsetWidth; // force reflow so the animation restarts
         el.style.animation = '';
       });
+      const lastCar = carEls[carEls.length - 1];
+      if (lastCar && finishLine) {
+        lastCar.addEventListener('animationend', () => {
+          positionFinishLine();
+          finishLine.classList.add('reveal');
+        }, { once:true });
+      }
     });
 
     document.getElementById('calibGetCode').addEventListener('click', () => {
