@@ -115,36 +115,70 @@
   }
   .hero-text{ min-width:0; }
   .hero-visual{
+    /* no border, no fill — purely an invisible clipping area so the
+       cars are hidden until they slide into frame from off-screen */
     position:relative;
-    width:100%; aspect-ratio:1 / 1.05;
-    overflow:hidden; /* keeps the incoming cars fully hidden until they
-      cross into frame — you only ever see the hood first, never a spawn */
-    border:1px solid var(--line);
-    border-radius:2px;
-    background:radial-gradient(ellipse 80% 70% at 50% 40%, rgba(30,95,255,0.08), transparent 70%);
+    width:100%; aspect-ratio:1 / 1.35;
+    overflow:hidden;
+    --car-w:64%; --car-left:8%;
+    --car-top-1:2%; --car-top-2:37%; --car-top-3:72%;
+    --car-enter-x:165%; --car-duration:1.15s; --car-delay-step:0.65s;
   }
   .hero-car{
-    position:absolute; left:4%;
-    width:82%; max-width:360px; height:auto;
+    position:absolute; left:var(--car-left);
+    width:var(--car-w); max-width:300px; height:auto;
     background-size:contain; background-repeat:no-repeat; background-position:center;
     aspect-ratio:16 / 9;
     opacity:0;
-    transform:translateX(-140%);
-    animation:carEnter 1.15s cubic-bezier(0.16,1,0.3,1) forwards;
+    /* positive = starts off past the RIGHT edge of the box, well outside
+       the frame, so it visibly slides in from off-screen rather than
+       materializing inside the box */
+    transform:translateX(var(--car-enter-x));
+    animation:carEnter var(--car-duration) cubic-bezier(0.16,1,0.3,1) forwards;
   }
-  .hero-car.car1{ top:6%; }
-  .hero-car.car2{ top:38%; animation-delay:0.65s; }
-  .hero-car.car3{ top:70%; animation-delay:1.3s; }
+  .hero-car.car1{ top:var(--car-top-1); animation-delay:calc(var(--car-delay-step) * 0); }
+  .hero-car.car2{ top:var(--car-top-2); animation-delay:calc(var(--car-delay-step) * 1); }
+  .hero-car.car3{ top:var(--car-top-3); animation-delay:calc(var(--car-delay-step) * 2); }
   /* medium speed at first, then a decelerating "graph" ease into
      the resting spot — no bounce, no overshoot, just a smooth stop */
   @keyframes carEnter{
-    0%{ transform:translateX(-140%); opacity:0; }
+    0%{ transform:translateX(var(--car-enter-x)); opacity:0; }
     12%{ opacity:1; }
     100%{ transform:translateX(0); opacity:1; }
   }
   @media (max-width:900px){
     .hero-inner{ grid-template-columns:1fr; }
     .hero-visual{ max-width:420px; }
+  }
+
+  /* ---- car calibration tool (only appears with ?calibrate in the URL) ---- */
+  .calib-toggle{
+    position:fixed; right:18px; bottom:18px; z-index:999;
+    background:var(--blue); color:#fff; border:none; border-radius:6px;
+    padding:10px 16px; font-family:'JetBrains Mono'; font-size:13px;
+    cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,0.4);
+  }
+  .calib-panel{
+    position:fixed; right:18px; bottom:66px; z-index:999;
+    width:280px; max-height:76vh; overflow-y:auto;
+    background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:16px; box-shadow:0 8px 24px rgba(0,0,0,0.5);
+    font-family:'JetBrains Mono'; font-size:12px;
+  }
+  .calib-panel h4{ font-family:'JetBrains Mono'; font-size:13px; margin-bottom:12px; color:var(--blue); }
+  .calib-row{ margin-bottom:10px; }
+  .calib-row label{ display:flex; justify-content:space-between; margin-bottom:4px; color:var(--bar3); }
+  .calib-row input[type="range"]{ width:100%; }
+  .calib-actions{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .calib-actions button{
+    flex:1; background:var(--panel-hi); border:1px solid var(--line); color:var(--white);
+    padding:8px 10px; border-radius:6px; cursor:pointer; font-family:'JetBrains Mono'; font-size:11px;
+  }
+  .calib-actions button:hover{ border-color:var(--blue); }
+  #calibOutput{
+    width:100%; margin-top:10px; background:var(--void); color:var(--white);
+    border:1px solid var(--line); border-radius:6px; padding:8px;
+    font-family:'JetBrains Mono'; font-size:11px; resize:vertical;
   }
   .eyebrow{
     font-family:'JetBrains Mono'; font-size:13px; letter-spacing:0.18em;
@@ -192,40 +226,38 @@
     transition:border-color .2s ease, transform .2s ease;
   }
   .driver-card:hover{border-color:var(--blue); transform:translateY(-4px);}
-  .photo-row{ position:relative; height:190px; border-bottom:1px solid var(--line); overflow:hidden; }
+  .photo-row{ position:relative; height:220px; overflow:hidden; }
   .car-photo{
-    position:relative;
     height:100%; width:100%; background:var(--panel-hi);
     display:flex; align-items:center; justify-content:center;
     color:var(--bar5); font-family:'JetBrains Mono'; font-size:12px;
     letter-spacing:0.1em; text-transform:uppercase;
     background-size:cover; background-position:center;
   }
-  /* smooth fade from the card's own panel color into the car photo —
-     solid panel tone up to the "red line" point, fully resolved to the
-     photo (0 opacity overlay) by the "green line" point, no hard edge */
-  .car-photo::before{
-    content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
-    background:linear-gradient(to right,
-      var(--panel) 0%, var(--panel) 12%, transparent 50%);
+  /* smooth top-to-bottom fade: the photo reads clean up top, then blends
+     down into the card's panel color, bleeding over the top of the info
+     box below instead of stopping at a hard line */
+  .driver-card::before{
+    content:""; position:absolute; left:0; right:0; z-index:1; pointer-events:none;
+    top:150px; height:100px;
+    background:linear-gradient(to bottom, transparent 0%, var(--panel) 88%);
   }
-  /* bounding box the avatar must stay inside — anchored to the
-     card's bottom-left corner, image cropped to torso-and-up only */
+  /* avatar bleeds from inside the photo down to the dashed line above
+     "Car — 2024 Lotus Emira", sitting behind the name/role text, on the left */
   .avatar-slot{
-    position:absolute; left:8px; bottom:0; width:52%; max-width:150px; height:76%;
-    overflow:hidden;
-    pointer-events:none; z-index:2;
+    position:absolute; left:8px; bottom:49px; width:50%; max-width:150px; height:260px;
+    overflow:hidden; z-index:2;
+    pointer-events:none;
   }
   .avatar-slot img{
     position:absolute; left:50%; top:0; transform:translateX(-50%);
-    width:auto; height:190%; /* scaled so only the head-to-torso portion
-      falls inside the box; the lower half (legs) is clipped away below */
+    width:auto; height:175%; /* keeps the crop to head-and-torso only */
     object-fit:cover; object-position:top center;
   }
-  .driver-body{padding:18px 20px 20px;}
+  .driver-body{ position:relative; z-index:3; padding:14px 20px 16px; }
   .driver-num{ font-family:'JetBrains Mono'; color:var(--blue); font-size:14px; margin-bottom:4px; }
   .driver-name{font-family:'Rajdhani'; font-size:23px; font-weight:700; margin-bottom:2px;}
-  .driver-role{color:var(--bar4); font-size:14px; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:14px;}
+  .driver-role{color:var(--bar4); font-size:14px; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;}
   .driver-car{
     font-size:14px; color:var(--bar3); border-top:1px dashed var(--line); padding-top:12px;
     display:flex; justify-content:space-between;
@@ -256,7 +288,7 @@
     transition:border-color .2s ease;
   }
   .sponsor-tile:hover{border-color:var(--blue);}
-  .sponsor-tile img{ width:100%; height:100%; object-fit:cover; }
+  .sponsor-tile img{ width:100%; height:100%; object-fit:contain; }
   .sponsor-tile .placeholder{
     font-family:'JetBrains Mono'; font-size:11px; color:var(--bar5); letter-spacing:0.08em; text-transform:uppercase;
   }
@@ -386,6 +418,51 @@
   Hyperline Racing Team &middot; Greenville RP Community
 </footer>
 
+<button id="calibToggle" class="calib-toggle" style="display:none;">⚙ Calibrate Cars</button>
+<div id="calibPanel" class="calib-panel" style="display:none;">
+  <h4>// Hero Car Calibration</h4>
+  <div class="calib-row">
+    <label>Car width <span id="calWVal">64%</span></label>
+    <input type="range" id="calW" min="30" max="100" value="64">
+  </div>
+  <div class="calib-row">
+    <label>Left offset <span id="calLeftVal">8%</span></label>
+    <input type="range" id="calLeft" min="0" max="40" value="8">
+  </div>
+  <div class="calib-row">
+    <label>Car 1 top <span id="calTop1Val">2%</span></label>
+    <input type="range" id="calTop1" min="0" max="90" value="2">
+  </div>
+  <div class="calib-row">
+    <label>Car 2 top <span id="calTop2Val">37%</span></label>
+    <input type="range" id="calTop2" min="0" max="90" value="37">
+  </div>
+  <div class="calib-row">
+    <label>Car 3 top <span id="calTop3Val">72%</span></label>
+    <input type="range" id="calTop3" min="0" max="90" value="72">
+  </div>
+  <div class="calib-row">
+    <label>Enter distance <span id="calEnterVal">165%</span></label>
+    <input type="range" id="calEnter" min="100" max="260" value="165">
+  </div>
+  <div class="calib-row">
+    <label>Duration (s) <span id="calDurationVal">1.15</span></label>
+    <input type="range" id="calDuration" min="0.4" max="3" step="0.05" value="1.15">
+  </div>
+  <div class="calib-row">
+    <label>Delay step (s) <span id="calDelayVal">0.65</span></label>
+    <input type="range" id="calDelay" min="0" max="1.5" step="0.05" value="0.65">
+  </div>
+  <div class="calib-actions">
+    <button id="calibReplay">Replay</button>
+    <button id="calibGetCode">Get CSS code</button>
+  </div>
+  <textarea id="calibOutput" rows="10" readonly style="display:none;"></textarea>
+  <div class="calib-actions" id="calibCopyRow" style="display:none;">
+    <button id="calibCopy">Copy code</button>
+  </div>
+</div>
+
 <script>
   /* =========================================================
      SAMPLE DATA — used only as a fallback if the sheet can't
@@ -429,8 +506,8 @@
       <div class="driver-card">
         <div class="photo-row">
           <div class="car-photo" ${carStyle}>${carInner}</div>
-          ${avatarSlot}
         </div>
+        ${avatarSlot}
         <div class="driver-body">
           <div class="driver-num">#${d.num}</div>
           <div class="driver-name">${d.name}</div>
@@ -614,6 +691,77 @@
   } else {
     renderAll();
   }
+
+  /* =========================================================
+     CAR CALIBRATION TOOL
+     Only shows up when the URL has ?calibrate in it, e.g.
+     yoursite.com/?calibrate — keeps it invisible to normal visitors.
+     Drag the sliders to preview live, hit "Replay" to re-run the
+     entrance animation with the new values, then "Get CSS code" +
+     "Copy code" to grab a :root{...} block. Paste that block right
+     under the existing :root{...} in the <style> tag (or merge the
+     values into it) to make the tweak permanent.
+     ========================================================= */
+  (function initCalibration(){
+    if (!location.search.includes('calibrate')) return;
+
+    const toggleBtn = document.getElementById('calibToggle');
+    const panel = document.getElementById('calibPanel');
+    toggleBtn.style.display = 'block';
+    toggleBtn.addEventListener('click', () => {
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+
+    const heroVisual = document.querySelector('.hero-visual');
+    const bindings = [
+      ['calW', '--car-w', '%'],
+      ['calLeft', '--car-left', '%'],
+      ['calTop1', '--car-top-1', '%'],
+      ['calTop2', '--car-top-2', '%'],
+      ['calTop3', '--car-top-3', '%'],
+      ['calEnter', '--car-enter-x', '%'],
+      ['calDuration', '--car-duration', 's'],
+      ['calDelay', '--car-delay-step', 's'],
+    ];
+
+    bindings.forEach(([id, varName, unit]) => {
+      const input = document.getElementById(id);
+      const label = document.getElementById(id + 'Val');
+      input.addEventListener('input', () => {
+        heroVisual.style.setProperty(varName, input.value + unit);
+        label.textContent = input.value + unit;
+      });
+    });
+
+    document.getElementById('calibReplay').addEventListener('click', () => {
+      document.querySelectorAll('.hero-car').forEach(el => {
+        el.style.animation = 'none';
+        void el.offsetWidth; // force reflow so the animation restarts
+        el.style.animation = '';
+      });
+    });
+
+    document.getElementById('calibGetCode').addEventListener('click', () => {
+      const lines = bindings.map(([id, varName, unit]) =>
+        `    ${varName}: ${document.getElementById(id).value}${unit};`
+      );
+      const code = `.hero-visual{\n${lines.join('\n')}\n  }`;
+      const out = document.getElementById('calibOutput');
+      out.value = code;
+      out.style.display = 'block';
+      document.getElementById('calibCopyRow').style.display = 'flex';
+    });
+
+    document.getElementById('calibCopy').addEventListener('click', () => {
+      const out = document.getElementById('calibOutput');
+      navigator.clipboard.writeText(out.value).then(() => {
+        const btn = document.getElementById('calibCopy');
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = original; }, 1200);
+      });
+    });
+  })();
 </script>
 
 </body>
