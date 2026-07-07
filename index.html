@@ -127,14 +127,40 @@
   .hero-car{
     position:absolute; left:var(--car-left);
     width:var(--car-w); max-width:300px; height:auto;
-    background-size:contain; background-repeat:no-repeat; background-position:center;
     aspect-ratio:16 / 9;
     opacity:0;
+    cursor:pointer;
     /* positive = starts off past the RIGHT edge of the box, well outside
        the frame, so it visibly slides in from off-screen rather than
        materializing inside the box */
     transform:translateX(var(--car-enter-x));
     animation:carEnter var(--car-duration) cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .hero-car-img{
+    position:absolute; inset:0;
+    background-size:contain; background-repeat:no-repeat; background-position:center;
+  }
+  /* hover border that "builds itself" clockwise, one edge at a time */
+  .hero-car-border{ position:absolute; inset:-6px; pointer-events:none; }
+  .hero-car-border i{
+    position:absolute; display:block; background:var(--blue); font-style:normal;
+    box-shadow:0 0 8px rgba(30,95,255,0.7);
+    transition:width .3s ease, height .3s ease;
+  }
+  .hero-car-border .edge-top{ top:0; left:0; height:2px; width:0; }
+  .hero-car-border .edge-right{ top:0; right:0; width:2px; height:0; }
+  .hero-car-border .edge-bottom{ bottom:0; right:0; height:2px; width:0; }
+  .hero-car-border .edge-left{ bottom:0; left:0; width:2px; height:0; }
+  .hero-car:hover .edge-top{ width:100%; transition-delay:0s; }
+  .hero-car:hover .edge-right{ height:100%; transition-delay:.3s; }
+  .hero-car:hover .edge-bottom{ width:100%; transition-delay:.6s; }
+  .hero-car:hover .edge-left{ height:100%; transition-delay:.9s; }
+  /* quick, un-staggered retract when the mouse leaves */
+  .hero-car:not(:hover) .edge-top,
+  .hero-car:not(:hover) .edge-right,
+  .hero-car:not(:hover) .edge-bottom,
+  .hero-car:not(:hover) .edge-left{
+    transition-delay:0s; transition-duration:.2s;
   }
   .hero-car.car1{ top:var(--car-top-1); animation-delay:calc(var(--car-delay-step) * 0); }
   .hero-car.car2{ top:var(--car-top-2); animation-delay:calc(var(--car-delay-step) * 1); }
@@ -151,15 +177,71 @@
     .hero-visual{ max-width:420px; }
   }
 
-  /* ---- finish line: appears only once all 3 cars have stopped,
-     drawing itself top-to-bottom with a fade as it goes ---- */
+  /* ---- car detail modal (opens on car click) ---- */
+  .car-modal-overlay{
+    display:none; position:fixed; inset:0; z-index:1000;
+    background:rgba(6,7,10,0.82); backdrop-filter:blur(6px);
+    align-items:center; justify-content:center; padding:24px;
+  }
+  .car-modal-overlay.open{ display:flex; }
+  .car-modal{
+    position:relative; width:100%; max-width:880px; max-height:88vh;
+    overflow-y:auto; background:var(--panel); border:1px solid var(--line);
+    border-radius:10px; padding:36px;
+  }
+  .car-modal-close{
+    position:absolute; top:16px; right:16px; width:36px; height:36px;
+    border-radius:6px; border:1px solid var(--line); background:var(--panel-hi);
+    color:var(--white); font-size:20px; line-height:1; cursor:pointer;
+  }
+  .car-modal-close:hover{ border-color:var(--blue); }
+  .car-modal h2{ font-size:clamp(26px,3.5vw,36px); margin-bottom:6px; }
+  .car-modal .car-modal-sub{ color:var(--bar4); font-size:15px; margin-bottom:26px; }
+  .car-modal-hero{
+    width:100%; aspect-ratio:16/9; border-radius:8px; overflow:hidden;
+    background:var(--panel-hi) center/cover no-repeat; margin-bottom:30px;
+    border-left:3px solid var(--blue);
+  }
+  .car-modal-section{
+    display:grid; grid-template-columns:1fr 1fr; gap:30px; align-items:center;
+    margin-bottom:34px;
+  }
+  .car-modal-section.reverse .car-modal-section-media{ order:2; }
+  .car-modal-section-media{
+    width:100%; aspect-ratio:4/3; border-radius:8px; overflow:hidden;
+    background:var(--panel-hi) center/cover no-repeat; border-left:3px solid var(--blue);
+  }
+  .car-modal-section-text .tag{
+    font-family:'JetBrains Mono'; font-size:12px; letter-spacing:0.14em;
+    color:var(--blue); text-transform:uppercase; display:block; margin-bottom:10px;
+  }
+  .car-modal-section-text p{ color:var(--bar3); font-size:16px; margin-bottom:14px; }
+  @media (max-width:640px){
+    .car-modal-section, .car-modal-section.reverse{ grid-template-columns:1fr; }
+    .car-modal-section.reverse .car-modal-section-media{ order:0; }
+  }
+
+  /* ---- finish line: two parallel dashed stripes (opposite color phase,
+     like a real finish-line marking), anchored from the very top of the
+     page, appearing only once all 3 cars have stopped, drawing itself
+     top-to-bottom with a fade as it goes ---- */
   .finish-line{
-    position:absolute; width:4px; z-index:5; pointer-events:none;
-    background:repeating-linear-gradient(to bottom,
-      var(--white) 0 10px, var(--blue) 10px 20px);
-    box-shadow:0 0 12px rgba(30,95,255,0.35);
+    position:absolute; z-index:5; pointer-events:none;
+    display:flex; gap:6px;
     clip-path:inset(0 0 100% 0);
     opacity:0;
+  }
+  .finish-line i{
+    display:block; width:7px; height:100%; font-style:normal;
+    box-shadow:0 0 12px rgba(30,95,255,0.35);
+  }
+  .finish-line .stripe-a{
+    background:repeating-linear-gradient(to bottom,
+      var(--white) 0 14px, var(--blue) 14px 28px);
+  }
+  .finish-line .stripe-b{
+    background:repeating-linear-gradient(to bottom,
+      var(--blue) 0 14px, var(--white) 14px 28px);
   }
   .finish-line.reveal{
     animation:finishLineReveal 1s ease-out forwards;
@@ -263,9 +345,13 @@
     background:linear-gradient(to bottom, transparent 0%, var(--panel) 88%);
   }
   /* avatar bleeds from inside the photo down to the dashed line above
-     "Car — 2024 Lotus Emira", sitting behind the name/role text, on the left */
+     "Car — 2024 Lotus Emira", sitting behind the name/role text, on the right.
+     >>> To adjust how much of the character shows, change AVATAR_HEIGHT
+     below (in px) — smaller number = shorter crop window. <<< */
   .avatar-slot{
-    position:absolute; left:8px; bottom:49px; width:50%; max-width:150px; height:260px;
+    --avatar-height: 190px; /* <<< EDIT THIS to resize the avatar crop */
+    position:absolute; right:8px; bottom:49px; width:50%; max-width:150px;
+    height:var(--avatar-height);
     overflow:hidden; z-index:2;
     pointer-events:none;
   }
@@ -304,12 +390,24 @@
     background:var(--panel); border:1px solid var(--line);
     height:120px; width:220px; flex:0 0 auto;
     display:flex; align-items:center; justify-content:center;
-    overflow:hidden;
+    overflow:hidden; position:relative;
+    background-size:cover; background-position:center;
     transition:border-color .2s ease;
   }
   .sponsor-tile:hover{border-color:var(--blue);}
-  .sponsor-tile img{ width:100%; height:100%; object-fit:contain; }
+  /* the tile's own background-image (same logo, set inline) shows through
+     blurred behind the sharp centered logo — fills the letterbox bars
+     that "contain" sizing leaves with a soft extension of the artwork's
+     own colors instead of flat gray/black, no cropping, same box size */
+  .sponsor-tile::before{
+    content:""; position:absolute; inset:-16px;
+    background-image:inherit; background-size:cover; background-position:center;
+    filter:blur(18px) brightness(0.55) saturate(1.15);
+    z-index:0;
+  }
+  .sponsor-tile img{ position:relative; z-index:1; width:100%; height:100%; object-fit:contain; }
   .sponsor-tile .placeholder{
+    position:relative; z-index:1;
     font-family:'JetBrains Mono'; font-size:11px; color:var(--bar5); letter-spacing:0.08em; text-transform:uppercase;
   }
 
@@ -438,7 +536,14 @@
   Hyperline Racing Team &middot; Greenville RP Community
 </footer>
 
-<div class="finish-line" id="finishLine"></div>
+<div class="finish-line" id="finishLine"><i class="stripe-a"></i><i class="stripe-b"></i></div>
+
+<div class="car-modal-overlay" id="carModalOverlay">
+  <div class="car-modal" id="carModal">
+    <button class="car-modal-close" id="carModalClose" aria-label="Close">&times;</button>
+    <div id="carModalContent"></div>
+  </div>
+</div>
 
 <button id="calibToggle" class="calib-toggle" style="display:none;">⚙ Calibrate Cars</button>
 <div id="calibPanel" class="calib-panel" style="display:none;">
@@ -574,7 +679,7 @@
     const track = document.getElementById('sponsorTrack');
     if(!sponsors.length){ track.innerHTML = ''; return; }
     const tile = s => `
-      <div class="sponsor-tile">
+      <div class="sponsor-tile" ${s.img ? `style="background-image:url('${s.img}')"` : ''}>
         ${s.img ? `<img src="${s.img}" alt="${s.name}">` : `<span class="placeholder">${s.name}</span>`}
       </div>`;
     // Repeat the list until it's wide enough to fill even a very wide
@@ -616,15 +721,19 @@
 
   // Positions the finish line: left edge sits just before where the
   // cars' hoods come to rest (with a small gap so it's not touching the
-  // car), running from the top of the car box down to the horizontal
-  // rule under "The Lineup" heading.
+  // car), running from the very top of the page (just under the sticky
+  // nav — not wherever the hero box happens to be vertically centered,
+  // which is what made it look like it started from a random spot)
+  // down to the horizontal rule under "The Lineup" heading.
   function positionFinishLine(){
     const heroVisual = document.querySelector('.hero-visual');
+    const header = document.querySelector('header');
     const sectionHead = document.querySelector('#roster .section-head');
     const line = document.getElementById('finishLine');
-    if (!heroVisual || !sectionHead || !line) return;
+    if (!heroVisual || !header || !sectionHead || !line) return;
 
     const heroRect = heroVisual.getBoundingClientRect();
+    const headerRect = header.getBoundingClientRect();
     const headRect = sectionHead.getBoundingClientRect();
     const scrollY = window.scrollY || window.pageYOffset;
 
@@ -632,9 +741,10 @@
     const carLeftPercent = parseFloat(
       getComputedStyle(heroVisual).getPropertyValue('--car-left')
     ) || 8;
-    const leftPx = heroRect.left + (heroRect.width * carLeftPercent / 100) - gap;
+    const leftPx = heroRect.left + (heroRect.width * carLeftPercent / 100) - gap - 20;
+    // -20 shifts the whole two-stripe unit (20px wide) fully left of that point
 
-    const top = heroRect.top + scrollY;
+    const top = headerRect.bottom + scrollY; // true top of the page content
     const bottom = headRect.bottom + scrollY; // stops right at that rule
     line.style.left = leftPx + 'px';
     line.style.top = top + 'px';
@@ -654,9 +764,18 @@
     // Rebuilding the elements (rather than just swapping background
     // images) is what makes the drive-in animation replay every time
     // renderAll() runs — i.e. on every fresh page load/refresh.
-    el.innerHTML = active
-      .map(l => `<div class="hero-car ${l.cls}" style="background-image:url('${cars[l.key]}')"></div>`)
-      .join('');
+    el.innerHTML = active.map(l => `
+      <div class="hero-car ${l.cls}" data-car-key="${l.key}">
+        <div class="hero-car-img" style="background-image:url('${cars[l.key]}')"></div>
+        <div class="hero-car-border">
+          <i class="edge-top"></i><i class="edge-right"></i><i class="edge-bottom"></i><i class="edge-left"></i>
+        </div>
+      </div>`).join('');
+
+    // click any car to open its detail modal
+    el.querySelectorAll('.hero-car').forEach(carEl => {
+      carEl.addEventListener('click', () => openCarModal(carEl.dataset.carKey));
+    });
 
     // Reveal the finish line only once the LAST car has fully stopped
     const finishLine = document.getElementById('finishLine');
@@ -671,6 +790,81 @@
       }, { once:true });
     }
   }
+
+  /* =========================================================
+     CAR DETAIL MODAL
+     Placeholder content for now — once you send over the sheet with
+     real car photos/specs (engine, aero, interior, whatever sections
+     you want), swap the placeholder text/images in `carModalData`
+     below for values read straight from that sheet, the same way
+     drivers/sponsors/mentions are read above. The click-to-open
+     wiring and the whole modal UI already work end to end.
+     ========================================================= */
+  const carModalData = {
+    car1: {
+      name: 'Car 1',
+      sub: 'Full specs coming soon',
+      hero: '',
+      sections: [
+        { tag:'Overview', text:'Details for this car will show up here once photos and copy are added to the sheet.', img:'' }
+      ]
+    },
+    car2: {
+      name: 'Car 2',
+      sub: 'Full specs coming soon',
+      hero: '',
+      sections: [
+        { tag:'Overview', text:'Details for this car will show up here once photos and copy are added to the sheet.', img:'' }
+      ]
+    },
+    car3: {
+      name: 'Car 3',
+      sub: 'Full specs coming soon',
+      hero: '',
+      sections: [
+        { tag:'Overview', text:'Details for this car will show up here once photos and copy are added to the sheet.', img:'' }
+      ]
+    },
+  };
+
+  function openCarModal(key){
+    const data = carModalData[key];
+    if (!data) return;
+    const overlay = document.getElementById('carModalOverlay');
+    const content = document.getElementById('carModalContent');
+    const heroImg = data.hero || cars[key] || '';
+
+    const sections = (data.sections || []).map((s, i) => `
+      <div class="car-modal-section ${i % 2 === 1 ? 'reverse' : ''}">
+        <div class="car-modal-section-media" ${s.img ? `style="background-image:url('${s.img}')"` : ''}></div>
+        <div class="car-modal-section-text">
+          <span class="tag">${s.tag || ''}</span>
+          <p>${s.text || ''}</p>
+        </div>
+      </div>`).join('');
+
+    content.innerHTML = `
+      <h2>${data.name}</h2>
+      <div class="car-modal-sub">${data.sub || ''}</div>
+      <div class="car-modal-hero" ${heroImg ? `style="background-image:url('${heroImg}')"` : ''}></div>
+      ${sections}`;
+
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeCarModal(){
+    document.getElementById('carModalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('carModalClose').addEventListener('click', closeCarModal);
+  document.getElementById('carModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'carModalOverlay') closeCarModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCarModal();
+  });
 
   function renderAll(){
     renderRoster();
