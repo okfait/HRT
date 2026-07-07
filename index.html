@@ -172,51 +172,74 @@
     12%{ opacity:1; }
     100%{ transform:translateX(0); opacity:1; }
   }
+  /* car name label — pinned top-left, fades in once the hover border
+     has finished drawing itself */
+  .hero-car-name{
+    position:absolute; top:6px; left:6px; z-index:3;
+    font-family:'JetBrains Mono'; font-size:12px; letter-spacing:0.06em;
+    color:var(--white); text-transform:uppercase;
+    background:rgba(6,7,10,0.6); padding:4px 9px; border-radius:3px;
+    opacity:0; transform:translateY(-4px);
+    transition:opacity .25s ease, transform .25s ease;
+    pointer-events:none;
+  }
+  .hero-car:hover .hero-car-name{
+    opacity:1; transform:translateY(0); transition-delay:.9s;
+  }
   @media (max-width:900px){
     .hero-inner{ grid-template-columns:1fr; }
     .hero-visual{ max-width:420px; }
   }
 
-  /* ---- car detail modal (opens on car click) ---- */
+  /* ---- car detail view: genuinely full-screen, not a boxed-in popup ---- */
   .car-modal-overlay{
     display:none; position:fixed; inset:0; z-index:1000;
-    background:rgba(6,7,10,0.82); backdrop-filter:blur(6px);
-    align-items:center; justify-content:center; padding:24px;
+    background:var(--void); overflow-y:auto;
   }
-  .car-modal-overlay.open{ display:flex; }
-  .car-modal{
-    position:relative; width:100%; max-width:880px; max-height:88vh;
-    overflow-y:auto; background:var(--panel); border:1px solid var(--line);
-    border-radius:10px; padding:36px;
+  .car-modal-overlay.open{ display:block; }
+  .car-modal-bar{
+    position:sticky; top:0; z-index:5;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 32px; background:rgba(6,7,10,0.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
   }
+  .car-modal-bar-brand{
+    font-family:'JetBrains Mono'; font-size:13px; letter-spacing:0.1em;
+    color:var(--bar4); text-transform:uppercase;
+  }
+  .car-modal-bar-brand b{ color:var(--white); }
   .car-modal-close{
-    position:absolute; top:16px; right:16px; width:36px; height:36px;
-    border-radius:6px; border:1px solid var(--line); background:var(--panel-hi);
-    color:var(--white); font-size:20px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; gap:8px;
+    background:transparent; border:1px solid var(--line); color:var(--white);
+    padding:8px 16px; border-radius:6px; cursor:pointer;
+    font-family:'JetBrains Mono'; font-size:12px; letter-spacing:0.06em; text-transform:uppercase;
+    transition:border-color .2s ease;
   }
   .car-modal-close:hover{ border-color:var(--blue); }
-  .car-modal h2{ font-size:clamp(26px,3.5vw,36px); margin-bottom:6px; }
-  .car-modal .car-modal-sub{ color:var(--bar4); font-size:15px; margin-bottom:26px; }
+  .car-modal{ max-width:1100px; margin:0 auto; padding:56px 32px 100px; }
+  .car-modal h2{ font-family:'Rajdhani'; font-weight:700; font-size:clamp(34px,5vw,56px); margin-bottom:6px; }
   .car-modal-hero{
-    width:100%; aspect-ratio:16/9; border-radius:8px; overflow:hidden;
-    background:var(--panel-hi) center/cover no-repeat; margin-bottom:30px;
-    border-left:3px solid var(--blue);
+    width:100%; aspect-ratio:21/9; border-radius:8px; overflow:hidden;
+    background:var(--panel-hi) center/cover no-repeat; margin:28px 0 56px;
+    border-left:4px solid var(--blue);
   }
   .car-modal-section{
-    display:grid; grid-template-columns:1fr 1fr; gap:30px; align-items:center;
-    margin-bottom:34px;
+    display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center;
+    margin-bottom:64px;
   }
   .car-modal-section.reverse .car-modal-section-media{ order:2; }
   .car-modal-section-media{
     width:100%; aspect-ratio:4/3; border-radius:8px; overflow:hidden;
-    background:var(--panel-hi) center/cover no-repeat; border-left:3px solid var(--blue);
+    background:var(--panel-hi) center/cover no-repeat; border-left:4px solid var(--blue);
   }
   .car-modal-section-text .tag{
-    font-family:'JetBrains Mono'; font-size:12px; letter-spacing:0.14em;
-    color:var(--blue); text-transform:uppercase; display:block; margin-bottom:10px;
+    font-family:'JetBrains Mono'; font-size:13px; letter-spacing:0.16em;
+    color:var(--white); text-transform:uppercase; display:block;
+    padding-bottom:14px; margin-bottom:18px; border-bottom:1px solid var(--line);
   }
-  .car-modal-section-text p{ color:var(--bar3); font-size:16px; margin-bottom:14px; }
-  @media (max-width:640px){
+  .car-modal-section-text p{ color:var(--bar3); font-size:16px; line-height:1.7; }
+  .car-modal-empty{ color:var(--bar4); font-size:15px; padding:40px 0; }
+  @media (max-width:720px){
     .car-modal-section, .car-modal-section.reverse{ grid-template-columns:1fr; }
     .car-modal-section.reverse .car-modal-section-media{ order:0; }
   }
@@ -227,21 +250,21 @@
      top-to-bottom with a fade as it goes ---- */
   .finish-line{
     position:absolute; z-index:5; pointer-events:none;
-    display:flex; gap:6px;
+    display:flex; gap:0;
     clip-path:inset(0 0 100% 0);
     opacity:0;
   }
   .finish-line i{
-    display:block; width:7px; height:100%; font-style:normal;
+    display:block; width:10px; height:100%; font-style:normal;
     box-shadow:0 0 12px rgba(30,95,255,0.35);
   }
   .finish-line .stripe-a{
     background:repeating-linear-gradient(to bottom,
-      var(--white) 0 14px, var(--blue) 14px 28px);
+      var(--white) 0 20px, var(--blue) 20px 40px);
   }
   .finish-line .stripe-b{
     background:repeating-linear-gradient(to bottom,
-      var(--blue) 0 14px, var(--white) 14px 28px);
+      var(--blue) 0 20px, var(--white) 20px 40px);
   }
   .finish-line.reveal{
     animation:finishLineReveal 1s ease-out forwards;
@@ -356,9 +379,12 @@
     pointer-events:none;
   }
   .avatar-slot img{
-    position:absolute; left:50%; top:0; transform:translateX(-50%);
+    position:absolute; left:0; top:0;
     width:auto; height:175%; /* keeps the crop to head-and-torso only */
-    object-fit:cover; object-position:top center;
+    object-fit:cover; object-position:top left;
+    /* anchored left (not centered) so any overflow gets clipped on the
+       RIGHT — the side nearest the card edge — keeping the left arm
+       fully intact instead of cropping both arms evenly */
   }
   .driver-body{ position:relative; z-index:3; padding:14px 20px 16px; }
   .driver-num{ font-family:'JetBrains Mono'; color:var(--blue); font-size:14px; margin-bottom:4px; }
@@ -539,8 +565,11 @@
 <div class="finish-line" id="finishLine"><i class="stripe-a"></i><i class="stripe-b"></i></div>
 
 <div class="car-modal-overlay" id="carModalOverlay">
+  <div class="car-modal-bar">
+    <div class="car-modal-bar-brand"><b>HRT</b> // Car Detail</div>
+    <button class="car-modal-close" id="carModalClose" aria-label="Close">&times; Close</button>
+  </div>
   <div class="car-modal" id="carModal">
-    <button class="car-modal-close" id="carModalClose" aria-label="Close">&times;</button>
     <div id="carModalContent"></div>
   </div>
 </div>
@@ -619,6 +648,13 @@
   // Hero cars — one row only: the 3 top-down shots that drive into
   // the hero box, one after another, on every page load/refresh.
   let cars = { car1:"", car2:"", car3:"" };
+  // Row 4: each car's display name (shown on hover + as the modal title)
+  let carNames = { car1:"", car2:"", car3:"" };
+  // Rows 5-9: gallery photos for the full-screen car detail view
+  let carGallery = { car1:[], car2:[], car3:[] };
+  // Rows 10-13: paragraph text for each fixed subtitle, in this order
+  const CAR_SECTION_LABELS = ['Engine', 'Aerodynamics', 'Design', 'Performance'];
+  let carSectionText = { car1:[], car2:[], car3:[] };
 
   /* ---------- render helpers ---------- */
 
@@ -767,6 +803,7 @@
     el.innerHTML = active.map(l => `
       <div class="hero-car ${l.cls}" data-car-key="${l.key}">
         <div class="hero-car-img" style="background-image:url('${cars[l.key]}')"></div>
+        <div class="hero-car-name">${carNames[l.key] || ''}</div>
         <div class="hero-car-border">
           <i class="edge-top"></i><i class="edge-right"></i><i class="edge-bottom"></i><i class="edge-left"></i>
         </div>
@@ -792,62 +829,43 @@
   }
 
   /* =========================================================
-     CAR DETAIL MODAL
-     Placeholder content for now — once you send over the sheet with
-     real car photos/specs (engine, aero, interior, whatever sections
-     you want), swap the placeholder text/images in `carModalData`
-     below for values read straight from that sheet, the same way
-     drivers/sponsors/mentions are read above. The click-to-open
-     wiring and the whole modal UI already work end to end.
+     CAR DETAIL VIEW (full-screen)
+     Reads straight from the sheet:
+       row4        -> car name (also shown on hover)
+       rows5-9     -> gallery photos
+       rows10-13   -> paragraph text for each CAR_SECTION_LABELS entry
+     Gallery photo[i] is paired with section label[i] (same index) so
+     each subtitle gets its own image, same as the reference layout.
+     The first gallery photo (or the hero drive-in shot as a fallback)
+     is used as the big top image.
      ========================================================= */
-  const carModalData = {
-    car1: {
-      name: 'Car 1',
-      sub: 'Full specs coming soon',
-      hero: '',
-      sections: [
-        { tag:'Overview', text:'Details for this car will show up here once photos and copy are added to the sheet.', img:'' }
-      ]
-    },
-    car2: {
-      name: 'Car 2',
-      sub: 'Full specs coming soon',
-      hero: '',
-      sections: [
-        { tag:'Overview', text:'Details for this car will show up here once photos and copy are added to the sheet.', img:'' }
-      ]
-    },
-    car3: {
-      name: 'Car 3',
-      sub: 'Full specs coming soon',
-      hero: '',
-      sections: [
-        { tag:'Overview', text:'Details for this car will show up here once photos and copy are added to the sheet.', img:'' }
-      ]
-    },
-  };
-
   function openCarModal(key){
-    const data = carModalData[key];
-    if (!data) return;
     const overlay = document.getElementById('carModalOverlay');
     const content = document.getElementById('carModalContent');
-    const heroImg = data.hero || cars[key] || '';
+    const name = carNames[key] || key;
+    const gallery = carGallery[key] || [];
+    const texts = carSectionText[key] || [];
+    const heroImg = gallery[0] || cars[key] || '';
 
-    const sections = (data.sections || []).map((s, i) => `
+    const sections = CAR_SECTION_LABELS.map((label, i) => ({
+      tag: label,
+      text: texts[i] || '',
+      img: gallery[i + 1] || gallery[i] || ''
+    })).filter(s => s.text); // only show subtitles that actually have text yet
+
+    const sectionsHtml = sections.map((s, i) => `
       <div class="car-modal-section ${i % 2 === 1 ? 'reverse' : ''}">
         <div class="car-modal-section-media" ${s.img ? `style="background-image:url('${s.img}')"` : ''}></div>
         <div class="car-modal-section-text">
-          <span class="tag">${s.tag || ''}</span>
-          <p>${s.text || ''}</p>
+          <span class="tag">${s.tag}</span>
+          <p>${s.text}</p>
         </div>
       </div>`).join('');
 
     content.innerHTML = `
-      <h2>${data.name}</h2>
-      <div class="car-modal-sub">${data.sub || ''}</div>
+      <h2>${name}</h2>
       <div class="car-modal-hero" ${heroImg ? `style="background-image:url('${heroImg}')"` : ''}></div>
-      ${sections}`;
+      ${sectionsHtml || `<p class="car-modal-empty">Specs and photos for this car are coming soon.</p>`}`;
 
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -881,8 +899,12 @@
        columns A–F  -> Drivers  (Name, Number, Role, CarName, CarImage, AvatarImage)
        columns H–I  -> Sponsors (Name, Image)
        columns K–M  -> Mentions (Name, RoleText, AvatarImage)
-       columns O–Q  -> Cars     (Car1Image, Car2Image, Car3Image) — one row only,
-                        the hero drive-in animation
+       columns O–Q  -> Cars     row3: Car1/2/3Image (hero drive-in shots)
+                                row4: Car1/2/3Name (hover label + modal title)
+                                rows5-9: gallery photo URLs for the detail view
+                                rows10-13: paragraph text, one per subtitle
+                                  (Engine, Aerodynamics, Design, Performance —
+                                  see CAR_SECTION_LABELS)
      Row 1 is blank, row 2 is headers, data starts row 3.
      There's no separate "Team Manager" table — whichever Mentions
      row has RoleText exactly "Team Manager" becomes the standalone
@@ -901,6 +923,8 @@
           drivers.length = 0;
           sponsors.length = 0;
           const rawMentions = [];
+          carGallery = { car1:[], car2:[], car3:[] };
+          carSectionText = { car1:[], car2:[], car3:[] };
 
           for (let i = 2; i < rows.length; i++) {
             const r = rows[i];
@@ -923,12 +947,36 @@
                 img: (r[12] || '').trim()
               });
             }
-            if (i === 2) { // Cars: O-Q — one row only
+            // Cars table: O-Q
+            // row 3 (i=2): Car1Image / Car2Image / Car3Image
+            // row 4 (i=3): Car1Name / Car2Name / Car3Name
+            // rows 5-9 (i=4..8): gallery photo URLs for the detail view
+            // rows 10-13 (i=9..12): paragraph text, one per CAR_SECTION_LABELS entry
+            if (i === 2) {
               cars = {
                 car1: (r[14] || '').trim(),
                 car2: (r[15] || '').trim(),
                 car3: (r[16] || '').trim()
               };
+            }
+            if (i === 3) {
+              carNames = {
+                car1: (r[14] || '').trim(),
+                car2: (r[15] || '').trim(),
+                car3: (r[16] || '').trim()
+              };
+            }
+            if (i >= 4 && i <= 8) {
+              ['car1','car2','car3'].forEach((key, idx) => {
+                const val = (r[14 + idx] || '').trim();
+                if (val) carGallery[key].push(val);
+              });
+            }
+            if (i >= 9 && i <= 12) {
+              ['car1','car2','car3'].forEach((key, idx) => {
+                const val = (r[14 + idx] || '').trim();
+                carSectionText[key].push(val);
+              });
             }
           }
 
